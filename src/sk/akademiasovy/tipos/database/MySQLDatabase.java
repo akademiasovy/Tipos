@@ -1,8 +1,13 @@
 package sk.akademiasovy.tipos.database;
 
+import sk.akademiasovy.tipos.Bet;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by host on 30.1.2018.
@@ -11,14 +16,15 @@ public class MySQLDatabase {
   private final String url="jdbc:mysql://localhost:3306/";
   private final String dbName="tipos";
   private final String driver="com.mysql.jdbc.Driver";
-  private final String userName="user2";
+  private final String userName2="user2";
+  private final String userName1="user1";
   private final String password="secret";
   private Connection conn;
 
   public void testConnection(){
       try {
           Class.forName(driver).newInstance();
-          conn= DriverManager.getConnection(url+dbName,userName,password);
+          conn= DriverManager.getConnection(url+dbName,userName2,password);
           if (conn == null) {
               System.out.println("Connection failed");
           }
@@ -28,7 +34,7 @@ public class MySQLDatabase {
           conn.close();
       }
       catch(Exception e){
-          System.out.println("Error. I cannot connect to the database!");
+          System.out.println("Error: "+e.getMessage());
       }
 
   }
@@ -36,7 +42,7 @@ public class MySQLDatabase {
     public boolean insertValuesIntoDrawHistory(int arr[]){
         try{
         Class.forName(driver).newInstance();
-        conn= DriverManager.getConnection(url+dbName,userName,password);
+        conn= DriverManager.getConnection(url+dbName,userName2,password);
             String cmd="INSERT INTO draw_history(ball1, ball2, ball3, ball4, ball5) ";
             cmd+=" VALUES(?,?,?,?,?)";
             PreparedStatement preparedStatement = conn.prepareStatement(cmd);
@@ -54,6 +60,28 @@ public class MySQLDatabase {
             System.out.println("Error. I cannot connect to the database!");
         }
         return true;
+    }
+
+    public List<Bet> getNewBets(){
+        try {
+            Class.forName(driver).newInstance();
+            List<Bet> list = new ArrayList<>();
+            conn = DriverManager.getConnection(url + dbName, userName1, password);
+            String cmd="SELECT * FROM bets "+
+                    " INNER JOIN bet_details ON bets.id=bet_details.idb "+
+                    " WHERE bets.draw_id IS NULL";
+            PreparedStatement preparedStatement=conn.prepareStatement(cmd);
+            ResultSet resultSet=preparedStatement.executeQuery();
+            while(resultSet.next()){
+
+                Bet bet=new Bet(resultSet.getInt("id"),resultSet.getInt("idu"),resultSet.getDate("date"),resultSet.getInt("bet1"),resultSet.getInt("bet2"),resultSet.getInt("bet3"),resultSet.getInt("bet4"), resultSet.getInt("bet5") );
+                list.add(bet);
+            }
+            return list;
+        }catch(Exception e){
+            System.out.println("Error: "+e.getMessage());
+        }
+        return null;
     }
 
 }
